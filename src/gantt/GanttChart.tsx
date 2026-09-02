@@ -1,8 +1,10 @@
-import {useCallback, useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {normalizeSectionColors, sectionBandBackground} from "@/lib/sectionColors";
 import {GanttChangePayload, GanttTask, GanttZoom} from "./types";
 import {useGanttGeometry} from "./useGanttGeometry";
 import TimeAxis from "./TimeAxis";
 import TaskBar, {barTone} from "./TaskBar";
+import {sectionAltByRow, sectionBandsFromTasks} from "./sectionBands";
 
 const AXIS_HEIGHT = 52;
 const ROW_HEIGHT = 36;
@@ -18,15 +20,30 @@ export interface GanttChartProps {
 	showNames?: boolean
 	/** Fixed height; omit to fill the parent. */
 	height?: number | string
+	sectionColorA?: string
+	sectionColorB?: string
 }
 
 const GanttChart = (props: GanttChartProps) => {
-	const {tasks, zoom, onTaskChange, onOpenSource, showNames, height} = props;
+	const {
+		tasks,
+		zoom,
+		onTaskChange,
+		onOpenSource,
+		showNames,
+		height,
+		sectionColorA,
+		sectionColorB,
+	} = props;
 	const geometry = useGanttGeometry(tasks, zoom);
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const namesRef = useRef<HTMLDivElement>(null);
 	const [window_, setWindow] = useState<{ fromX: number; toX: number }>({fromX: 0, toX: 1200});
 	const rafPending = useRef(false);
+	const {colorA, colorB} = normalizeSectionColors({sectionColorA, sectionColorB});
+	const rowBackground = useCallback((alt: boolean) =>
+		sectionBandBackground(alt ? colorB : colorA, alt ? "alt" : "base"),
+	[colorA, colorB]);
 
 	const updateWindow = useCallback(() => {
 		const el = scrollRef.current;
@@ -41,8 +58,6 @@ const GanttChart = (props: GanttChartProps) => {
 
 	const onScroll = useCallback(() => {
 		const el = scrollRef.current;
-		// Direct transform sync: the name pane follows vertical scroll with
-		// no React re-render on the scroll path.
 		if (el && namesRef.current) {
 			namesRef.current.style.transform = `translateY(${-el.scrollTop}px)`;
 		}
@@ -54,7 +69,6 @@ const GanttChart = (props: GanttChartProps) => {
 		});
 	}, [updateWindow]);
 
-	// Center today on first paint and when zoom changes.
 	useEffect(() => {
 		const el = scrollRef.current;
 		if (!el) return;
@@ -62,7 +76,7 @@ const GanttChart = (props: GanttChartProps) => {
 			el.scrollLeft = Math.max(0, geometry.todayX - el.clientWidth / 3);
 		}
 		updateWindow();
-	}, [zoom]); // eslint-disable-line react-hooks/exhaustive-deps -- recenter on zoom change only, not on every geometry rebuild
+	}, [zoom]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	useEffect(() => {
 		updateWindow();
@@ -76,22 +90,30 @@ const GanttChart = (props: GanttChartProps) => {
 	const today = new Date();
 	const cells = geometry.cellsIn(window_.fromX, window_.toX);
 	const bodyHeight = tasks.length * ROW_HEIGHT;
+	const sectionBands = useMemo(() => sectionBandsFromTasks(tasks), [tasks]);
+	const rowSectionAlt = useMemo(() => sectionAltByRow(tasks), [tasks]);
+	const sectionStartRows = useMemo(() => new Set(sectionBands.map(b => b.startRow)), [sectionBands]);
 
 	return <div className={"sg-chart"} style={{height}}>
 		{showNames ?
 			<div className={"sg-names-pane"}>
 				<div className={"sg-names-pane__header"}>Tasks</div>
 				<div ref={namesRef}>
-					{tasks.map(t =>
+					{tasks.map((t, rowIndex) =>
 						<div
 							key={t.id}
 							className={[
 								"sg-names__item",
 								`sg-names__item--${barTone(t, today)}`,
 							].join(" ")}
-							style={{height: ROW_HEIGHT}}
+							style={{
+								height: ROW_HEIGHT,
+								background: rowBackground(rowSectionAlt[rowIndex]),
+							}}
 							onClick={() => void onOpenSource?.(t)}
-							title={t.name}
+							title={sectionStartRows.has(rowIndex) && t.sectionTitle
+								? `${t.sectionTitle}: ${t.name}`
+								: t.name}
 						>
 							{t.name}
 						</div>
@@ -108,6 +130,19 @@ const GanttChart = (props: GanttChartProps) => {
 				<TimeAxis geometry={geometry} fromX={window_.fromX} toX={window_.toX}/>
 
 				<div className={"sg-grid"} style={{top: AXIS_HEIGHT, height: bodyHeight}}>
+					<div className={"sg-section-bands"}>
+						{sectionBands.map(band =>
+							<div
+								key={`${band.key}:${band.startRow}`}
+								className={"sg-section-band"}
+								style={{
+									top: band.startRow * ROW_HEIGHT,
+									height: band.rowCount * ROW_HEIGHT,
+									background: rowBackground(band.alt),
+								}}
+							/>
+						)}
+					</div>
 					{cells.map(c => <div key={c.x}>
 						{c.isWeekend ?
 							<div className={"sg-grid__weekend"} style={{left: c.x, width: c.width}}/>
@@ -120,8 +155,15 @@ const GanttChart = (props: GanttChartProps) => {
 				</div>
 
 				<div className={"sg-rows"} style={{top: AXIS_HEIGHT}}>
-					{tasks.map(t =>
-						<div key={t.id} className={"sg-row"} style={{height: ROW_HEIGHT}}>
+					{tasks.map((t, rowIndex) =>
+						<div
+							key={t.id}
+							className={"sg-row"}
+							style={{
+								height: ROW_HEIGHT,
+								background: rowBackground(rowSectionAlt[rowIndex]),
+							}}
+						>
 							<TaskBar
 								task={t}
 								geometry={geometry}

@@ -1,18 +1,11 @@
 import {addIcon, Plugin, WorkspaceLeaf} from 'obsidian';
 import SmartGanttSibeBarView from "@/sidebar/SmartGanttSibeBarView";
 import {Helper} from "@/lib/Helper";
-import SettingManager, {SmartGanttSettings} from "./src/SettingManager";
+import SettingManager, {DEFAULT_SMART_GANTT_SETTINGS, SmartGanttSettings} from "./src/SettingManager";
 import GanttBlockManager from "./src/GanttBlockManager";
 import SmartGanttItemView, {SMART_GANTT_ITEM_VIEW_TYPE} from "@/GanttItemView";
 
-const DEFAULT_SETTINGS: SmartGanttSettings = {
-	pathListFilter: ["AllFiles"],
-	todoShowQ: true,
-	doneShowQ: true,
-	leftBarChartDisplayQ: true,
-	viewMode: "day"
-
-}
+const DEFAULT_SETTINGS: SmartGanttSettings = DEFAULT_SMART_GANTT_SETTINGS;
 
 
 export default class SmartGanttPlugin extends Plugin {

@@ -10,6 +10,12 @@ export interface GanttTask {
 	status: GanttTaskStatus
 	/** Vault path of the source line, when the task came from a note. */
 	sourcePath?: string
+	/** Stable key for heading-based section bands within a file. */
+	sectionKey?: string
+	/** Nearest heading title above the task, when present. */
+	sectionTitle?: string | null
+	/** 1-based source line for stable ordering. */
+	sourceLine?: number
 	/** Surface-specific payload carried through untouched. */
 	meta?: unknown
 }

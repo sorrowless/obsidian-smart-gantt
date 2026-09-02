@@ -1,6 +1,6 @@
 import SmartGanttPlugin from "../main";
 import {createRoot} from "react-dom/client";
-import {SmartGanttSettings} from "./SettingManager";
+import {DEFAULT_SMART_GANTT_SETTINGS, SmartGanttSettings} from "./SettingManager";
 import {SmartGanttBlockReactComponentNg} from "./BlockComponent/SmartGanttBlockReactComponentNg";
 import {StrictMode} from "react";
 import {TaskListMdBlock} from "@/BlockComponent/TaskListMdBlock";
@@ -18,13 +18,12 @@ export default class GanttBlockManager {
 		// }))
 
 		this.thisPlugin.registerMarkdownCodeBlockProcessor("gantt", async (source, el, ctx) => {
-			const settings: SmartGanttSettings = source.trim() !== "" ? JSON.parse(source) as SmartGanttSettings : {
-				doneShowQ: true,
-				todoShowQ: true,
-				pathListFilter: ["CurrentFile"],
-				viewMode: "day",
-				leftBarChartDisplayQ: true,
-			}
+			const settings: SmartGanttSettings = source.trim() !== ""
+				? {...DEFAULT_SMART_GANTT_SETTINGS, ...JSON.parse(source) as SmartGanttSettings}
+				: {
+					...DEFAULT_SMART_GANTT_SETTINGS,
+					pathListFilter: ["CurrentFile"],
+				}
 
 			let root = el.createDiv({cls: "twp"})
 			let reactRoot = createRoot(root)
@@ -46,13 +45,12 @@ export default class GanttBlockManager {
 			//@ts-ignore
 			// console.log(_ctx.getSectionInfo(_ctx.el))
 			// console.log(source)
-			const settings: SmartGanttSettings = source.trim() !== "" ? JSON.parse(source) as SmartGanttSettings : {
-				doneShowQ: true,
-				todoShowQ: true,
-				pathListFilter: ["CurrentFile"],
-				viewMode: "day",
-				leftBarChartDisplayQ: true,
-			}
+			const settings: SmartGanttSettings = source.trim() !== ""
+				? {...DEFAULT_SMART_GANTT_SETTINGS, ...JSON.parse(source) as SmartGanttSettings}
+				: {
+					...DEFAULT_SMART_GANTT_SETTINGS,
+					pathListFilter: ["CurrentFile"],
+				}
 
 			let root = el.createDiv({cls: "twp"})
 			let reactRoot = createRoot(root)

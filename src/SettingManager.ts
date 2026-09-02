@@ -1,14 +1,32 @@
 import SmartGanttPlugin from "../main";
 import {GanttZoom} from "@/gantt/types";
 import {zoomFromSetting} from "@/gantt/adapters";
+import {
+	DEFAULT_SECTION_COLOR_A,
+	DEFAULT_SECTION_COLOR_B,
+} from "@/lib/sectionColors";
 
 export interface SmartGanttSettings {
 	pathListFilter: string[],
 	todoShowQ: boolean,
 	doneShowQ: boolean,
 	viewMode: GanttZoom,
-	leftBarChartDisplayQ :boolean,
+	leftBarChartDisplayQ: boolean,
+	/** Hex color for even heading blocks (#RRGGBB). */
+	sectionColorA: string,
+	/** Hex color for odd heading blocks (#RRGGBB). */
+	sectionColorB: string,
 }
+
+export const DEFAULT_SMART_GANTT_SETTINGS: SmartGanttSettings = {
+	pathListFilter: ["AllFiles"],
+	todoShowQ: true,
+	doneShowQ: true,
+	viewMode: "day",
+	leftBarChartDisplayQ: true,
+	sectionColorA: DEFAULT_SECTION_COLOR_A,
+	sectionColorB: DEFAULT_SECTION_COLOR_B,
+};
 
 export default class SettingManager {
 	get settings(): SmartGanttSettings {
@@ -27,7 +45,7 @@ export default class SettingManager {
 	async loadSettings() {
 		const data = await this.thisPlugin.loadData() as Partial<SmartGanttSettings> | null
 		if (data) {
-			this._settings = {...this._settings, ...data}
+			this._settings = {...DEFAULT_SMART_GANTT_SETTINGS, ...this._settings, ...data}
 		}
 		// Legacy persisted values used gantt-task-react ViewMode strings.
 		this._settings.viewMode = zoomFromSetting(this._settings.viewMode)

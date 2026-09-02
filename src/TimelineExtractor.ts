@@ -7,10 +7,12 @@ import {Node, Parent} from "unist"
 
 export type TimelineExtractorResultNg = {
 	id: string,
-	node:Node,
-	file:TFile,
-	parsedResult: ParsedResult|null
-
+	node: Node,
+	file: TFile,
+	parsedResult: ParsedResult | null,
+	sectionKey: string,
+	sectionTitle: string | null,
+	sourceLine: number,
 }
 
 export default class TimelineExtractor {
@@ -46,37 +48,42 @@ export default class TimelineExtractor {
 			completionIn = dueTo.replace(/\[completion::\s+(.*)]/g, " completion in $1 "),
 			cancelledIn = completionIn.replace(/\[cancelled::\s(.*)]/g, " cancelled in $1 "),
 
-			calendarMark = cancelledIn.replace("/📅/g", " to ")
+			calendarMark = cancelledIn.replace(/📅/g, " to ")
 
 		return calendarMark
 
 	}
 
 
-	async GetTimelineDataFromNodes(nodes:NodeFromParseTree[]):Promise<TimelineExtractorResultNg[]> {
-		let results:TimelineExtractorResultNg[] = []
-		nodes.forEach(((node,nodeId)=>{
+	async GetTimelineDataFromNodes(nodes: NodeFromParseTree[]): Promise<TimelineExtractorResultNg[]> {
+		let results: TimelineExtractorResultNg[] = []
+		nodes.forEach(((node, nodeId) => {
 			const paragraph = (node.node as Parent).children?.[0] as Parent | undefined
 			const firstChild = paragraph?.children?.[0] as { value?: unknown } | undefined
 			const rawText = typeof firstChild?.value === "string" ? firstChild.value : ""
 			let transformedText = this.makeTextCompatibleWithTaskPlugin(rawText)
 			const parsedResults = this.customChrono.parse(transformedText)
-			if (parsedResults && parsedResults.length > 0 ){
-				// One bar per task: prefer the parse that carries an explicit
-				// end (a range), fall back to the first match.
+			if (parsedResults && parsedResults.length > 0) {
 				const best = parsedResults.find(r => r.end) ?? parsedResults[0]
+				this.#countResultWithChrono += 1
 				results.push({
 					id: `${nodeId}`,
-					node:node.node,
-					file:node.file,
-					parsedResult:best
+					node: node.node,
+					file: node.file,
+					parsedResult: best,
+					sectionKey: node.sectionKey,
+					sectionTitle: node.sectionTitle,
+					sourceLine: node.sourceLine,
 				})
 			} else {
 				results.push({
 					id: `${nodeId}`,
-					node:node.node,
-					file:node.file,
-					parsedResult:null
+					node: node.node,
+					file: node.file,
+					parsedResult: null,
+					sectionKey: node.sectionKey,
+					sectionTitle: node.sectionTitle,
+					sourceLine: node.sourceLine,
 				})
 			}
 		}))

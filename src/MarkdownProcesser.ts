@@ -5,12 +5,21 @@ import {Processor, unified} from "unified";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import {Node, Parent} from "unist"
-import {ListItem} from "mdast"
+import {Heading, ListItem} from "mdast"
+import {
+	applyHeading,
+	HeadingFrame,
+	sectionKeyFromStack,
+	sectionTitleFromStack,
+} from "./lib/headingContext";
 import {taskStatusFromListItem} from "./lib/taskStatus";
 
 export type NodeFromParseTree = {
 	node: Node,
-	file: TFile
+	file: TFile,
+	sectionKey: string,
+	sectionTitle: string | null,
+	sourceLine: number,
 }
 
 export default class MarkdownProcesser {
@@ -40,7 +49,8 @@ export default class MarkdownProcesser {
 
 	private recursiveGetListItemFromParseTree(node: Node
 		, file: TFile
-		, settings: SmartGanttSettings) {
+		, settings: SmartGanttSettings
+		, headingStack: HeadingFrame[]) {
 
 		if (node.type == "listItem") {
 			const listItem = node as ListItem
@@ -52,15 +62,22 @@ export default class MarkdownProcesser {
 					(settings.todoShowQ && status === "open")) {
 					this.nodes.push({
 						node,
-						file
+						file,
+						sectionKey: sectionKeyFromStack(file.path, headingStack),
+						sectionTitle: sectionTitleFromStack(headingStack),
+						sourceLine: node.position?.start.line ?? 0,
 					})
 				}
 			}
 		}
 		if ("children" in node) {
-			(node as Parent).children.forEach((childNode) => {
-				this.recursiveGetListItemFromParseTree(childNode, file, settings)
-			})
+			let stack = headingStack;
+			for (const childNode of (node as Parent).children) {
+				if (childNode.type === "heading") {
+					stack = applyHeading(childNode as Heading, stack);
+				}
+				this.recursiveGetListItemFromParseTree(childNode, file, settings, stack)
+			}
 		}
 	}
 
@@ -68,12 +85,13 @@ export default class MarkdownProcesser {
 		if (!file) return
 		const fileContent = await this.currentPlugin.app.vault.cachedRead(file)
 		const parseTree: Node = this._remarkProcessor.parse(fileContent)
-		this.recursiveGetListItemFromParseTree(parseTree, file, settings)
+		this.recursiveGetListItemFromParseTree(parseTree, file, settings, [])
 
 	}
 
 
 	async parseAllFilesNg(settings: SmartGanttSettings) {
+		this._nodes = []
 		const pathFilterSettings = settings.pathListFilter
 		await Promise.all(this._files.map(async (file) => {
 			if (pathFilterSettings.includes("CurrentFile")) {

@@ -44,3 +44,19 @@ export function walkListItems(node: Node, visit: (item: ListItem) => void): void
 		}
 	}
 }
+
+/** Concatenate all inline text from the first paragraph of a list item. */
+export function listItemText(node: ListItem): string {
+	try {
+		const paragraph = node.children?.[0] as Parent | undefined;
+		if (!paragraph?.children) return "";
+		return paragraph.children
+			.map((child) => {
+				const textChild = child as { value?: unknown };
+				return typeof textChild.value === "string" ? textChild.value : "";
+			})
+			.join("");
+	} catch {
+		return "";
+	}
+}

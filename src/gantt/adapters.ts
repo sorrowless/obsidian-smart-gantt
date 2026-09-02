@@ -27,14 +27,27 @@ export function resultToGanttTask(r: TimelineExtractorResultNg): GanttTask | nul
 		end,
 		status: (r.node as ListItem).checked ? "done" : "open",
 		sourcePath: r.file.path,
+		sectionKey: r.sectionKey,
+		sectionTitle: r.sectionTitle,
+		sourceLine: r.sourceLine,
 		meta: r,
 	};
 }
 
+export function sortGanttTasks(tasks: GanttTask[]): GanttTask[] {
+	return [...tasks].sort((a, b) => {
+		const pathCmp = (a.sourcePath ?? "").localeCompare(b.sourcePath ?? "");
+		if (pathCmp !== 0) return pathCmp;
+		return (a.sourceLine ?? 0) - (b.sourceLine ?? 0);
+	});
+}
+
 export function resultsToGanttTasks(results: TimelineExtractorResultNg[]): GanttTask[] {
-	return results
-		.map(resultToGanttTask)
-		.filter((t): t is GanttTask => t !== null);
+	return sortGanttTasks(
+		results
+			.map(resultToGanttTask)
+			.filter((t): t is GanttTask => t !== null),
+	);
 }
 
 /** Normalizes persisted view modes, including legacy gantt-task-react values. */

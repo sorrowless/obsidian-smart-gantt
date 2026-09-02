@@ -160,6 +160,18 @@
 	pointer-events: none;
 }
 
+.sg-section-bands {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+}
+
+.sg-section-band {
+	position: absolute;
+	left: 0;
+	right: 0;
+}
+
 .sg-grid__line {
 	position: absolute;
 	top: 0;
@@ -195,6 +207,7 @@
 
 .sg-row {
 	position: relative;
+	z-index: 1;
 	border-bottom: 1px solid color-mix(in srgb, var(--sg-hairline) 40%, transparent);
 	transition: background-color var(--sg-dur-fast) var(--sg-ease);
 }

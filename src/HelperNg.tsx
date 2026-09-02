@@ -4,8 +4,7 @@ import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import {TFile} from "obsidian";
 import wikiLinkPlugin from "remark-wiki-link";
-import {listItemText} from "./lib/taskDates";
-import {taskStatusFromListItem, walkListItems} from "./lib/taskStatus";
+import {listItemText, taskStatusFromListItem, walkListItems} from "./lib/taskStatus";
 
 
 export type TaskWithMetaData = {
