@@ -16,6 +16,14 @@ export interface GanttTask {
 	sectionTitle?: string | null
 	/** 1-based source line for stable ordering. */
 	sourceLine?: number
+	/** Stable id for this checkbox line within the vault. */
+	taskNodeId?: string
+	/** Parent task id when nested under another checkbox task. */
+	parentTaskId?: string | null
+	/** 0 = top-level list item, 1 = first nested level, etc. */
+	listDepth?: number
+	/** Shared id for parent + subtask bar tinting; null for standalone tasks. */
+	nestGroupId?: string | null
 	/** Surface-specific payload carried through untouched. */
 	meta?: unknown
 }

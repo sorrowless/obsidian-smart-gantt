@@ -1,6 +1,7 @@
 import SmartGanttPlugin from "../../main";
 import {EditorPosition, MarkdownPostProcessorContext, MarkdownView, WorkspaceLeaf} from "obsidian";
 import {TimelineExtractorResultNg} from "@/TimelineExtractor";
+import {formatTasksDateRange} from "@/lib/taskDates";
 import {Node} from "mdast"
 import {SmartGanttSettings} from "@/SettingManager";
 export class Helper {
@@ -57,20 +58,23 @@ export class Helper {
 	 * range is appended.
 	 */
 	updateResultDates = async (result: TimelineExtractorResultNg, start: Date, end: Date) => {
-		if (!result.parsedResult) return
+		if (!result.taskDates && !result.parsedResult) return
 		const lineIndex = Number(result.node.position?.start.line) - 1
 		if (Number.isNaN(lineIndex) || lineIndex < 0) return
-		const iso = (d: Date) => {
-			const p = (n: number) => String(n).padStart(2, "0")
-			return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
-		}
-		const range = iso(start) === iso(end) ? iso(start) : `${iso(start)} to ${iso(end)}`
-		const matched = result.parsedResult.text
+		const range = formatTasksDateRange(start, end)
+		const matched = result.parsedResult?.text
 		await this.thisPlugin.app.vault.process(result.file, (content) => {
 			const lines = content.split("\n")
 			let line = lines[lineIndex]
 			if (line === undefined) return content
-			if (matched && line.includes(matched)) {
+			if (result.taskDates) {
+				line = line
+					.replace(/🛫\uFE0F?\s*\d{4}-\d{2}-\d{2}/gu, "")
+					.replace(/📅\uFE0F?\s*\d{4}-\d{2}-\d{2}/gu, "")
+					.replace(/\[(start|due)::[^\]]*]/gi, "")
+					.replace(/\s+$/, "")
+				line = `${line} ${range}`
+			} else if (matched && line.includes(matched)) {
 				line = line.replace(matched, range)
 			} else {
 				line = line

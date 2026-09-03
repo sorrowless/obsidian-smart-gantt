@@ -1,24 +1,27 @@
 import {ListItem} from "mdast";
 import type {TimelineExtractorResultNg} from "@/TimelineExtractor";
+import {listItemText} from "@/lib/taskStatus";
+import {finalizeGanttTasks} from "./nestedTasks";
 import {GanttTask, GanttZoom} from "./types";
 import {dayAnchor} from "./useGanttGeometry";
 
 export function nodeText(node: unknown): string {
-	try {
-		// list item -> paragraph -> text
-		const value = (node as { children: { children: { value?: string }[] }[] })
-			.children[0].children[0].value;
-		return (value ?? "").trim() || "Untitled task";
-	} catch {
-		return "Untitled task";
-	}
+	const text = listItemText(node as ListItem).trim();
+	return text || "Untitled task";
 }
 
 /** One extractor result with a parsed date becomes one bar. */
 export function resultToGanttTask(r: TimelineExtractorResultNg): GanttTask | null {
-	if (!r.parsedResult) return null;
-	let start = r.parsedResult.start.date();
-	let end = r.parsedResult.end ? r.parsedResult.end.date() : start;
+	let start: Date | null = null;
+	let end: Date | null = null;
+	if (r.taskDates) {
+		start = r.taskDates.start;
+		end = r.taskDates.end;
+	} else if (r.parsedResult) {
+		start = r.parsedResult.start.date();
+		end = r.parsedResult.end ? r.parsedResult.end.date() : start;
+	}
+	if (!start || !end) return null;
 	if (dayAnchor(end) < dayAnchor(start)) [start, end] = [end, start];
 	return {
 		id: r.id,
@@ -30,6 +33,9 @@ export function resultToGanttTask(r: TimelineExtractorResultNg): GanttTask | nul
 		sectionKey: r.sectionKey,
 		sectionTitle: r.sectionTitle,
 		sourceLine: r.sourceLine,
+		taskNodeId: r.taskNodeId,
+		parentTaskId: r.parentTaskId,
+		listDepth: r.listDepth,
 		meta: r,
 	};
 }
@@ -43,10 +49,12 @@ export function sortGanttTasks(tasks: GanttTask[]): GanttTask[] {
 }
 
 export function resultsToGanttTasks(results: TimelineExtractorResultNg[]): GanttTask[] {
-	return sortGanttTasks(
-		results
-			.map(resultToGanttTask)
-			.filter((t): t is GanttTask => t !== null),
+	return finalizeGanttTasks(
+		sortGanttTasks(
+			results
+				.map(resultToGanttTask)
+				.filter((t): t is GanttTask => t !== null),
+		),
 	);
 }
 

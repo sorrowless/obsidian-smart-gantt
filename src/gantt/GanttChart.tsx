@@ -8,6 +8,8 @@ import {sectionAltByRow, sectionBandsFromTasks} from "./sectionBands";
 
 const AXIS_HEIGHT = 52;
 const ROW_HEIGHT = 36;
+const NEST_INDENT_PX = 16;
+const NAMES_BASE_PADDING_PX = 14;
 const OVERSCAN_PX = 240;
 
 export interface GanttChartProps {
@@ -109,6 +111,7 @@ const GanttChart = (props: GanttChartProps) => {
 							style={{
 								height: ROW_HEIGHT,
 								background: rowBackground(rowSectionAlt[rowIndex]),
+								paddingLeft: NAMES_BASE_PADDING_PX + (t.listDepth ?? 0) * NEST_INDENT_PX,
 							}}
 							onClick={() => void onOpenSource?.(t)}
 							title={sectionStartRows.has(rowIndex) && t.sectionTitle

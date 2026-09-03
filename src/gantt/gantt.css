@@ -261,6 +261,30 @@
 	color: var(--sg-on-accent);
 }
 
+.sg-bar--nested.sg-bar--active {
+	background: color-mix(in srgb, var(--sg-accent) 34%, var(--sg-surface));
+	border: 1px solid color-mix(in srgb, var(--sg-accent) 58%, transparent);
+	color: var(--sg-label);
+}
+
+.sg-bar--nested.sg-bar--future {
+	background: color-mix(in srgb, var(--sg-accent) 24%, var(--sg-surface));
+	border: 1px solid color-mix(in srgb, var(--sg-accent) 45%, transparent);
+	color: var(--sg-label);
+}
+
+.sg-bar--nested.sg-bar--done {
+	background: color-mix(in srgb, var(--sg-accent) 16%, var(--sg-surface));
+	border: 1px solid color-mix(in srgb, var(--sg-accent) 38%, transparent);
+	color: var(--sg-label-2);
+}
+
+.sg-bar--nested.sg-bar--overdue {
+	background: color-mix(in srgb, var(--sg-overdue) 78%, var(--sg-surface));
+	border: 1px solid color-mix(in srgb, var(--sg-overdue) 90%, transparent);
+	color: var(--sg-on-accent);
+}
+
 .sg-bar--dragging {
 	cursor: grabbing;
 	transition: none;

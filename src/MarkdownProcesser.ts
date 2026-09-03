@@ -20,6 +20,15 @@ export type NodeFromParseTree = {
 	sectionKey: string,
 	sectionTitle: string | null,
 	sourceLine: number,
+	taskNodeId: string,
+	parentTaskId: string | null,
+	listDepth: number,
+}
+
+type FileWalkState = {
+	headingStack: HeadingFrame[]
+	listDepth: number
+	parentByDepth: (string | null)[]
 }
 
 export default class MarkdownProcesser {
@@ -50,7 +59,7 @@ export default class MarkdownProcesser {
 	private recursiveGetListItemFromParseTree(node: Node
 		, file: TFile
 		, settings: SmartGanttSettings
-		, headingStack: HeadingFrame[]) {
+		, state: FileWalkState) {
 
 		if (node.type == "listItem") {
 			const listItem = node as ListItem
@@ -60,23 +69,44 @@ export default class MarkdownProcesser {
 				listItem.checked = status === "done"
 				if ((settings.doneShowQ && status === "done") ||
 					(settings.todoShowQ && status === "open")) {
+					const sourceLine = node.position?.start.line ?? 0
+					const taskNodeId = `${file.path}::${sourceLine}`
+					const parentTaskId = state.listDepth > 0
+						? state.parentByDepth[state.listDepth - 1] ?? null
+						: null
+					state.parentByDepth[state.listDepth] = taskNodeId
+					state.parentByDepth.length = state.listDepth + 1
+
 					this.nodes.push({
 						node,
 						file,
-						sectionKey: sectionKeyFromStack(file.path, headingStack),
-						sectionTitle: sectionTitleFromStack(headingStack),
-						sourceLine: node.position?.start.line ?? 0,
+						sectionKey: sectionKeyFromStack(file.path, state.headingStack),
+						sectionTitle: sectionTitleFromStack(state.headingStack),
+						sourceLine,
+						taskNodeId,
+						parentTaskId,
+						listDepth: state.listDepth,
 					})
 				}
 			}
 		}
 		if ("children" in node) {
-			let stack = headingStack;
+			let headingStack = state.headingStack;
 			for (const childNode of (node as Parent).children) {
 				if (childNode.type === "heading") {
-					stack = applyHeading(childNode as Heading, stack);
+					headingStack = applyHeading(childNode as Heading, headingStack);
+				} else if (childNode.type === "list") {
+					this.recursiveGetListItemFromParseTree(childNode, file, settings, {
+						...state,
+						headingStack,
+						listDepth: state.listDepth + 1,
+					})
+				} else {
+					this.recursiveGetListItemFromParseTree(childNode, file, settings, {
+						...state,
+						headingStack,
+					})
 				}
-				this.recursiveGetListItemFromParseTree(childNode, file, settings, stack)
 			}
 		}
 	}
@@ -85,7 +115,11 @@ export default class MarkdownProcesser {
 		if (!file) return
 		const fileContent = await this.currentPlugin.app.vault.cachedRead(file)
 		const parseTree: Node = this._remarkProcessor.parse(fileContent)
-		this.recursiveGetListItemFromParseTree(parseTree, file, settings, [])
+		this.recursiveGetListItemFromParseTree(parseTree, file, settings, {
+			headingStack: [],
+			listDepth: -1,
+			parentByDepth: [],
+		})
 
 	}
 

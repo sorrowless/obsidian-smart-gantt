@@ -26,6 +26,7 @@ const TaskBar = memo((props: {
 
 	const today = new Date();
 	const tone = barTone(task, today);
+	const nested = Boolean(task.nestGroupId);
 	const px = geometry.spec.pxPerDay;
 
 	let left = geometry.barX(task);
@@ -53,6 +54,7 @@ const TaskBar = memo((props: {
 		className={[
 			"sg-bar",
 			`sg-bar--${tone}`,
+			nested ? "sg-bar--nested" : "",
 			drag ? "sg-bar--dragging sg-frost" : "",
 			onCommit ? "sg-bar--editable" : "",
 		].join(" ")}

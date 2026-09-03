@@ -1,8 +1,11 @@
 import {Chrono, ParsedResult} from "chrono-node";
+import {ListItem} from "mdast";
 
 import {NodeFromParseTree} from "./MarkdownProcesser";
+import {parseTaskDates, TaskDateRange} from "./lib/taskDates";
+import {listItemText} from "./lib/taskStatus";
 import {TFile} from "obsidian";
-import {Node, Parent} from "unist"
+import {Node} from "unist"
 
 
 export type TimelineExtractorResultNg = {
@@ -10,9 +13,13 @@ export type TimelineExtractorResultNg = {
 	node: Node,
 	file: TFile,
 	parsedResult: ParsedResult | null,
+	taskDates: TaskDateRange | null,
 	sectionKey: string,
 	sectionTitle: string | null,
 	sourceLine: number,
+	taskNodeId: string,
+	parentTaskId: string | null,
+	listDepth: number,
 }
 
 export default class TimelineExtractor {
@@ -58,22 +65,32 @@ export default class TimelineExtractor {
 	async GetTimelineDataFromNodes(nodes: NodeFromParseTree[]): Promise<TimelineExtractorResultNg[]> {
 		let results: TimelineExtractorResultNg[] = []
 		nodes.forEach(((node, nodeId) => {
-			const paragraph = (node.node as Parent).children?.[0] as Parent | undefined
-			const firstChild = paragraph?.children?.[0] as { value?: unknown } | undefined
-			const rawText = typeof firstChild?.value === "string" ? firstChild.value : ""
-			let transformedText = this.makeTextCompatibleWithTaskPlugin(rawText)
-			const parsedResults = this.customChrono.parse(transformedText)
-			if (parsedResults && parsedResults.length > 0) {
-				const best = parsedResults.find(r => r.end) ?? parsedResults[0]
-				this.#countResultWithChrono += 1
+			const rawText = listItemText(node.node as ListItem)
+			const taskDates = parseTaskDates(rawText)
+			let parsedResult: ParsedResult | null = null
+
+			if (!taskDates) {
+				const transformedText = this.makeTextCompatibleWithTaskPlugin(rawText)
+				const parsedResults = this.customChrono.parse(transformedText)
+				if (parsedResults && parsedResults.length > 0) {
+					parsedResult = parsedResults.find(r => r.end) ?? parsedResults[0]
+					this.#countResultWithChrono += 1
+				}
+			}
+
+			if (taskDates || parsedResult) {
 				results.push({
 					id: `${nodeId}`,
 					node: node.node,
 					file: node.file,
-					parsedResult: best,
+					parsedResult,
+					taskDates,
 					sectionKey: node.sectionKey,
 					sectionTitle: node.sectionTitle,
 					sourceLine: node.sourceLine,
+					taskNodeId: node.taskNodeId,
+					parentTaskId: node.parentTaskId,
+					listDepth: node.listDepth,
 				})
 			} else {
 				results.push({
@@ -81,9 +98,13 @@ export default class TimelineExtractor {
 					node: node.node,
 					file: node.file,
 					parsedResult: null,
+					taskDates: null,
 					sectionKey: node.sectionKey,
 					sectionTitle: node.sectionTitle,
 					sourceLine: node.sourceLine,
+					taskNodeId: node.taskNodeId,
+					parentTaskId: node.parentTaskId,
+					listDepth: node.listDepth,
 				})
 			}
 		}))
