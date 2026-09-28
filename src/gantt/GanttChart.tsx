@@ -5,6 +5,7 @@ import {useGanttGeometry} from "./useGanttGeometry";
 import TimeAxis from "./TimeAxis";
 import TaskBar, {barTone} from "./TaskBar";
 import {sectionAltByRow, sectionBandsFromTasks} from "./sectionBands";
+import {useNamesPaneResize} from "./useNamesPaneResize";
 
 const AXIS_HEIGHT = 52;
 const ROW_HEIGHT = 36;
@@ -95,10 +96,15 @@ const GanttChart = (props: GanttChartProps) => {
 	const sectionBands = useMemo(() => sectionBandsFromTasks(tasks), [tasks]);
 	const rowSectionAlt = useMemo(() => sectionAltByRow(tasks), [tasks]);
 	const sectionStartRows = useMemo(() => new Set(sectionBands.map(b => b.startRow)), [sectionBands]);
+	const {width: namesPaneWidth, resizing: resizingNames, handleProps: namesResizeHandleProps} =
+		useNamesPaneResize();
 
-	return <div className={"sg-chart"} style={{height}}>
+	return <div
+		className={["sg-chart", resizingNames ? "sg-chart--resizing-names" : ""].join(" ")}
+		style={{height}}
+	>
 		{showNames ?
-			<div className={"sg-names-pane"}>
+			<div className={"sg-names-pane"} style={{width: namesPaneWidth}}>
 				<div className={"sg-names-pane__header"}>Tasks</div>
 				<div ref={namesRef}>
 					{tasks.map((t, rowIndex) =>
@@ -122,6 +128,13 @@ const GanttChart = (props: GanttChartProps) => {
 						</div>
 					)}
 				</div>
+				<div
+					className={"sg-names-pane__resize"}
+					role={"separator"}
+					aria-orientation={"vertical"}
+					aria-label={"Resize tasks pane"}
+					{...namesResizeHandleProps}
+				/>
 			</div>
 			: null}
 

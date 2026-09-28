@@ -14,11 +14,48 @@
 /* ---- Name pane (sticky left, scroll-synced by transform) ---- */
 
 .sg-names-pane {
+	position: relative;
 	width: 200px;
 	flex: none;
 	overflow: hidden;
 	border-right: 1px solid var(--sg-hairline);
 	background: var(--sg-surface-2);
+}
+
+.sg-names-pane__resize {
+	position: absolute;
+	top: 0;
+	right: -3px;
+	z-index: 2;
+	width: 6px;
+	height: 100%;
+	cursor: col-resize;
+	touch-action: none;
+}
+
+.sg-names-pane__resize::after {
+	content: "";
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 2px;
+	width: 2px;
+	background: transparent;
+	transition: background-color var(--sg-dur-fast) var(--sg-ease);
+}
+
+.sg-names-pane__resize:hover::after,
+.sg-chart--resizing-names .sg-names-pane__resize::after {
+	background: color-mix(in srgb, var(--sg-accent) 55%, var(--sg-hairline));
+}
+
+.sg-chart--resizing-names {
+	cursor: col-resize;
+	user-select: none;
+}
+
+.sg-chart--resizing-names .sg-names__item {
+	pointer-events: none;
 }
 
 .sg-names-pane__header {
