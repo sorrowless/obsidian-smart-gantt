@@ -5,11 +5,30 @@ import {Processor, unified} from "unified";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import {Node, Parent} from "unist"
-import {ListItem} from "mdast"
+import {Heading, ListItem} from "mdast"
+import {
+	applyHeading,
+	HeadingFrame,
+	sectionKeyFromStack,
+	sectionTitleFromStack,
+} from "./lib/headingContext";
+import {taskStatusFromListItem} from "./lib/taskStatus";
 
 export type NodeFromParseTree = {
 	node: Node,
-	file: TFile
+	file: TFile,
+	sectionKey: string,
+	sectionTitle: string | null,
+	sourceLine: number,
+	taskNodeId: string,
+	parentTaskId: string | null,
+	listDepth: number,
+}
+
+type FileWalkState = {
+	headingStack: HeadingFrame[]
+	listDepth: number
+	parentByDepth: (string | null)[]
 }
 
 export default class MarkdownProcesser {
@@ -39,21 +58,56 @@ export default class MarkdownProcesser {
 
 	private recursiveGetListItemFromParseTree(node: Node
 		, file: TFile
-		, settings: SmartGanttSettings) {
+		, settings: SmartGanttSettings
+		, state: FileWalkState) {
 
 		if (node.type == "listItem") {
-			const checked = (node as ListItem).checked
-			if (settings.doneShowQ && checked === true || settings.todoShowQ && checked === false) {
-				this.nodes.push({
-					node,
-					file
-				})
+			const listItem = node as ListItem
+			const status = taskStatusFromListItem(listItem)
+
+			if (status !== null) {
+				listItem.checked = status === "done"
+				if ((settings.doneShowQ && status === "done") ||
+					(settings.todoShowQ && status === "open")) {
+					const sourceLine = node.position?.start.line ?? 0
+					const taskNodeId = `${file.path}::${sourceLine}`
+					const parentTaskId = state.listDepth > 0
+						? state.parentByDepth[state.listDepth - 1] ?? null
+						: null
+					state.parentByDepth[state.listDepth] = taskNodeId
+					state.parentByDepth.length = state.listDepth + 1
+
+					this.nodes.push({
+						node,
+						file,
+						sectionKey: sectionKeyFromStack(file.path, state.headingStack),
+						sectionTitle: sectionTitleFromStack(state.headingStack),
+						sourceLine,
+						taskNodeId,
+						parentTaskId,
+						listDepth: state.listDepth,
+					})
+				}
 			}
 		}
 		if ("children" in node) {
-			(node as Parent).children.forEach((childNode) => {
-				this.recursiveGetListItemFromParseTree(childNode, file, settings)
-			})
+			let headingStack = state.headingStack;
+			for (const childNode of (node as Parent).children) {
+				if (childNode.type === "heading") {
+					headingStack = applyHeading(childNode as Heading, headingStack);
+				} else if (childNode.type === "list") {
+					this.recursiveGetListItemFromParseTree(childNode, file, settings, {
+						...state,
+						headingStack,
+						listDepth: state.listDepth + 1,
+					})
+				} else {
+					this.recursiveGetListItemFromParseTree(childNode, file, settings, {
+						...state,
+						headingStack,
+					})
+				}
+			}
 		}
 	}
 
@@ -61,12 +115,17 @@ export default class MarkdownProcesser {
 		if (!file) return
 		const fileContent = await this.currentPlugin.app.vault.cachedRead(file)
 		const parseTree: Node = this._remarkProcessor.parse(fileContent)
-		this.recursiveGetListItemFromParseTree(parseTree, file, settings)
+		this.recursiveGetListItemFromParseTree(parseTree, file, settings, {
+			headingStack: [],
+			listDepth: -1,
+			parentByDepth: [],
+		})
 
 	}
 
 
 	async parseAllFilesNg(settings: SmartGanttSettings) {
+		this._nodes = []
 		const pathFilterSettings = settings.pathListFilter
 		await Promise.all(this._files.map(async (file) => {
 			if (pathFilterSettings.includes("CurrentFile")) {

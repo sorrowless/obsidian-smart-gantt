@@ -10,6 +10,20 @@ export interface GanttTask {
 	status: GanttTaskStatus
 	/** Vault path of the source line, when the task came from a note. */
 	sourcePath?: string
+	/** Stable key for heading-based section bands within a file. */
+	sectionKey?: string
+	/** Nearest heading title above the task, when present. */
+	sectionTitle?: string | null
+	/** 1-based source line for stable ordering. */
+	sourceLine?: number
+	/** Stable id for this checkbox line within the vault. */
+	taskNodeId?: string
+	/** Parent task id when nested under another checkbox task. */
+	parentTaskId?: string | null
+	/** 0 = top-level list item, 1 = first nested level, etc. */
+	listDepth?: number
+	/** Shared id for parent + subtask bar tinting; null for standalone tasks. */
+	nestGroupId?: string | null
 	/** Surface-specific payload carried through untouched. */
 	meta?: unknown
 }

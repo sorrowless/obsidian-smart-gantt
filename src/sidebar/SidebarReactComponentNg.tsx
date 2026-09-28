@@ -1,5 +1,5 @@
 import SmartGanttPlugin from "../../main";
-import {SmartGanttSettings} from "@/SettingManager";
+import {DEFAULT_SMART_GANTT_SETTINGS, SmartGanttSettings} from "@/SettingManager";
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import MarkdownProcesser from "../MarkdownProcesser";
 import TimelineExtractor, {TimelineExtractorResultNg} from "../TimelineExtractor";
@@ -13,17 +13,16 @@ import {GanttChart, ZoomControl, GanttTask, GanttZoom} from "@/gantt";
 import {resultsToGanttTasks, zoomFromSetting} from "@/gantt/adapters";
 import {CalendarRange, RotateCw, Settings2} from "lucide-react";
 
-const DEFAULT_SIDEBAR_SETTINGS: SmartGanttSettings = {
-	doneShowQ: true,
-	todoShowQ: true,
-	pathListFilter: ["CurrentFile"],
-	leftBarChartDisplayQ: false,
-	viewMode: "day",
-};
+const SIDEBAR_SETTINGS_KEY = "smart-gantt-sidebar-settings";
 
 /* Sidebar view preferences persist through Obsidian's vault-scoped
  * localStorage wrappers, as the store guidelines require. */
-const SIDEBAR_SETTINGS_KEY = "smart-gantt-sidebar-settings";
+
+const DEFAULT_SIDEBAR_SETTINGS: SmartGanttSettings = {
+	...DEFAULT_SMART_GANTT_SETTINGS,
+	pathListFilter: ["CurrentFile"],
+	leftBarChartDisplayQ: false,
+};
 
 const loadSidebarSettings = (plugin: SmartGanttPlugin): SmartGanttSettings => {
 	const raw = plugin.app.loadLocalStorage(SIDEBAR_SETTINGS_KEY) as Partial<SmartGanttSettings> | null;
@@ -173,6 +172,8 @@ const SidebarReactComponentNg = (props: {
 						onOpenSource={onOpenSource}
 						showNames={settings?.leftBarChartDisplayQ}
 						height={"100%"}
+						sectionColorA={settings.sectionColorA}
+						sectionColorB={settings.sectionColorB}
 					/>
 				</ResizablePanel>
 				<ResizableHandle withHandle={true}/>

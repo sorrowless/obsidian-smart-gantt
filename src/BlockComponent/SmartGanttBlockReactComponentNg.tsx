@@ -104,6 +104,8 @@ export const SmartGanttBlockReactComponentNg = (props: {
 				onOpenSource={onOpenSource}
 				showNames={internalSettings.leftBarChartDisplayQ}
 				height={320}
+				sectionColorA={internalSettings.sectionColorA}
+				sectionColorB={internalSettings.sectionColorB}
 			/>}
 	</main>
 };

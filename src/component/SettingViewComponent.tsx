@@ -1,4 +1,4 @@
-import {SmartGanttSettings} from "../SettingManager";
+import {DEFAULT_SMART_GANTT_SETTINGS, SmartGanttSettings} from "../SettingManager";
 import {useState} from "react";
 // import {usePlugin} from "./ReactContext";
 import {Checkbox} from "./Checkbox";
@@ -20,7 +20,10 @@ const SettingViewComponent = (props: {
 
 }) => {
 
-	const [s, setS] = useState<SmartGanttSettings>(structuredClone(props.inputS))
+	const [s, setS] = useState<SmartGanttSettings>(() => ({
+		...DEFAULT_SMART_GANTT_SETTINGS,
+		...structuredClone(props.inputS ?? {}),
+	}))
 	// const thisPlugin = usePlugin()
 
 	const allFileFilterRadio = <div className={"flex items-center space-x-2"}>
@@ -172,9 +175,33 @@ const SettingViewComponent = (props: {
 	}
 
 
+	const sectionColorSettings = <div className={"flex flex-col gap-3"}>
+		<div className={"text-sm font-medium"}>Heading block colors</div>
+		<div className={"flex items-center gap-3"}>
+			<Label htmlFor={"sectionColorA"}>Block A</Label>
+			<input
+				id={"sectionColorA"}
+				type={"color"}
+				value={s.sectionColorA}
+				onChange={(e) => setS({...s, sectionColorA: e.target.value})}
+				className={"h-8 w-12 cursor-pointer rounded border border-border bg-transparent p-0.5"}
+			/>
+		</div>
+		<div className={"flex items-center gap-3"}>
+			<Label htmlFor={"sectionColorB"}>Block B</Label>
+			<input
+				id={"sectionColorB"}
+				type={"color"}
+				value={s.sectionColorB}
+				onChange={(e) => setS({...s, sectionColorB: e.target.value})}
+				className={"h-8 w-12 cursor-pointer rounded border border-border bg-transparent p-0.5"}
+			/>
+		</div>
+	</div>;
+
 	const settingView = <>
 		{buttonsPanel}
-		<div className={"flex flex-row justify-around"}><RadioGroup onValueChange={e => {
+		<div className={"flex flex-row justify-around gap-4 flex-wrap"}><RadioGroup onValueChange={e => {
 			if (e === "AllFiles" || e === "CurrentFile") {
 				setS({...s, pathListFilter: [e]})
 
@@ -188,6 +215,7 @@ const SettingViewComponent = (props: {
 		</RadioGroup>
 			{filterBaseOnStatusCheckbox}
 			{showTaskListInChartCheckbox()}
+			{sectionColorSettings}
 
 		</div>
 

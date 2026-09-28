@@ -21,6 +21,12 @@ export type TimelineExtractorResultNg = {
 	span: GanttDateSpan | null,
 	parsedResult: ParsedResult | null,
 	rawText: string,
+	sectionKey: string,
+	sectionTitle: string | null,
+	sourceLine: number,
+	taskNodeId: string,
+	parentTaskId: string | null,
+	listDepth: number,
 }
 
 export default class TimelineExtractor {
@@ -63,6 +69,14 @@ export default class TimelineExtractor {
 	async GetTimelineDataFromNodes(nodes: NodeFromParseTree[]): Promise<TimelineExtractorResultNg[]> {
 		const results: TimelineExtractorResultNg[] = []
 		nodes.forEach(((node, nodeId) => {
+			const sectionMeta = {
+				sectionKey: node.sectionKey,
+				sectionTitle: node.sectionTitle,
+				sourceLine: node.sourceLine,
+				taskNodeId: node.taskNodeId,
+				parentTaskId: node.parentTaskId,
+				listDepth: node.listDepth,
+			}
 			const rawText = listItemText(node.node);
 			const taskDates = extractTaskDates(rawText);
 			const taskSpan = taskDates ? spanFromTaskDates(taskDates) : null;
@@ -75,6 +89,7 @@ export default class TimelineExtractor {
 					span: taskSpan,
 					parsedResult: null,
 					rawText,
+					...sectionMeta,
 				});
 				return;
 			}
@@ -89,6 +104,7 @@ export default class TimelineExtractor {
 					span: chronoResult.span,
 					parsedResult: chronoResult.parsedResult,
 					rawText,
+					...sectionMeta,
 				});
 				return;
 			}
@@ -100,6 +116,7 @@ export default class TimelineExtractor {
 				span: null,
 				parsedResult: null,
 				rawText,
+				...sectionMeta,
 			});
 		}))
 		return results
