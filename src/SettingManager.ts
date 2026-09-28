@@ -12,6 +12,8 @@ export interface SmartGanttSettings {
 	doneShowQ: boolean,
 	viewMode: GanttZoom,
 	leftBarChartDisplayQ: boolean,
+	/** When true, parents with subtasks start collapsed in the chart. */
+	nestCollapsedByDefault: boolean,
 	/** Hex color for even heading blocks (#RRGGBB). */
 	sectionColorA: string,
 	/** Hex color for odd heading blocks (#RRGGBB). */
@@ -24,6 +26,7 @@ export const DEFAULT_SMART_GANTT_SETTINGS: SmartGanttSettings = {
 	doneShowQ: true,
 	viewMode: "day",
 	leftBarChartDisplayQ: true,
+	nestCollapsedByDefault: false,
 	sectionColorA: DEFAULT_SECTION_COLOR_A,
 	sectionColorB: DEFAULT_SECTION_COLOR_B,
 };

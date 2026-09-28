@@ -74,7 +74,7 @@
 .sg-names__item {
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	gap: 6px;
 	padding: 0 14px;
 	font-size: 12.5px;
 	color: var(--sg-label-2);
@@ -88,6 +88,51 @@
 .sg-names__item:hover {
 	color: var(--sg-label);
 	background: var(--sg-hover);
+}
+
+.sg-names__toggle,
+.sg-names__toggle-spacer {
+	flex: none;
+	width: 16px;
+	height: 16px;
+}
+
+.sg-names__toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	border: none;
+	border-radius: 3px;
+	background: transparent;
+	color: var(--sg-label-3);
+	cursor: pointer;
+}
+
+.sg-names__toggle::before {
+	content: "";
+	width: 0;
+	height: 0;
+	border-top: 4px solid transparent;
+	border-bottom: 4px solid transparent;
+	border-left: 6px solid currentColor;
+	transform: rotate(0deg);
+	transition: transform var(--sg-dur-fast) var(--sg-ease);
+}
+
+.sg-names__toggle--expanded::before {
+	transform: rotate(90deg);
+}
+
+.sg-names__toggle:hover {
+	color: var(--sg-label);
+	background: var(--sg-hover);
+}
+
+.sg-names__label {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .sg-names__item::before {

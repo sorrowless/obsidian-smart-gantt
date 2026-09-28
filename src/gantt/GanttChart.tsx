@@ -6,6 +6,11 @@ import TimeAxis from "./TimeAxis";
 import TaskBar, {barTone} from "./TaskBar";
 import {sectionAltByRow, sectionBandsFromTasks} from "./sectionBands";
 import {useNamesPaneResize} from "./useNamesPaneResize";
+import {
+	initialCollapsedIds,
+	parentsWithChildren,
+	visibleGanttTasks,
+} from "./collapseTasks";
 
 const AXIS_HEIGHT = 52;
 const ROW_HEIGHT = 36;
@@ -25,6 +30,8 @@ export interface GanttChartProps {
 	height?: number | string
 	sectionColorA?: string
 	sectionColorB?: string
+	/** When true, parents with subtasks start collapsed. */
+	nestCollapsedByDefault?: boolean
 }
 
 const GanttChart = (props: GanttChartProps) => {
@@ -37,8 +44,34 @@ const GanttChart = (props: GanttChartProps) => {
 		height,
 		sectionColorA,
 		sectionColorB,
+		nestCollapsedByDefault = false,
 	} = props;
-	const geometry = useGanttGeometry(tasks, zoom);
+	const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() =>
+		initialCollapsedIds(tasks, nestCollapsedByDefault),
+	);
+
+	const parentIds = useMemo(() => parentsWithChildren(tasks), [tasks]);
+	const collapseSeedKey = `${nestCollapsedByDefault}:${[...parentIds].sort().join("\0")}`;
+
+	useEffect(() => {
+		setCollapsedIds(initialCollapsedIds(tasks, nestCollapsedByDefault));
+	}, [collapseSeedKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+	const visibleTasks = useMemo(
+		() => visibleGanttTasks(tasks, collapsedIds),
+		[tasks, collapsedIds],
+	);
+
+	const toggleCollapsed = useCallback((taskNodeId: string) => {
+		setCollapsedIds(prev => {
+			const next = new Set(prev);
+			if (next.has(taskNodeId)) next.delete(taskNodeId);
+			else next.add(taskNodeId);
+			return next;
+		});
+	}, []);
+
+	const geometry = useGanttGeometry(visibleTasks, zoom);
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const namesRef = useRef<HTMLDivElement>(null);
 	const [window_, setWindow] = useState<{ fromX: number; toX: number }>({fromX: 0, toX: 1200});
@@ -92,9 +125,9 @@ const GanttChart = (props: GanttChartProps) => {
 
 	const today = new Date();
 	const cells = geometry.cellsIn(window_.fromX, window_.toX);
-	const bodyHeight = tasks.length * ROW_HEIGHT;
-	const sectionBands = useMemo(() => sectionBandsFromTasks(tasks), [tasks]);
-	const rowSectionAlt = useMemo(() => sectionAltByRow(tasks), [tasks]);
+	const bodyHeight = visibleTasks.length * ROW_HEIGHT;
+	const sectionBands = useMemo(() => sectionBandsFromTasks(visibleTasks), [visibleTasks]);
+	const rowSectionAlt = useMemo(() => sectionAltByRow(visibleTasks), [visibleTasks]);
 	const sectionStartRows = useMemo(() => new Set(sectionBands.map(b => b.startRow)), [sectionBands]);
 	const {width: namesPaneWidth, resizing: resizingNames, handleProps: namesResizeHandleProps} =
 		useNamesPaneResize();
@@ -107,8 +140,10 @@ const GanttChart = (props: GanttChartProps) => {
 			<div className={"sg-names-pane"} style={{width: namesPaneWidth}}>
 				<div className={"sg-names-pane__header"}>Tasks</div>
 				<div ref={namesRef}>
-					{tasks.map((t, rowIndex) =>
-						<div
+					{visibleTasks.map((t, rowIndex) => {
+						const isParent = Boolean(t.taskNodeId && parentIds.has(t.taskNodeId));
+						const isCollapsed = Boolean(t.taskNodeId && collapsedIds.has(t.taskNodeId));
+						return <div
 							key={t.id}
 							className={[
 								"sg-names__item",
@@ -124,9 +159,24 @@ const GanttChart = (props: GanttChartProps) => {
 								? `${t.sectionTitle}: ${t.name}`
 								: t.name}
 						>
-							{t.name}
-						</div>
-					)}
+							{isParent ?
+								<button
+									type={"button"}
+									className={[
+										"sg-names__toggle",
+										isCollapsed ? "" : "sg-names__toggle--expanded",
+									].join(" ")}
+									aria-expanded={!isCollapsed}
+									aria-label={isCollapsed ? "Expand subtasks" : "Collapse subtasks"}
+									onClick={(e) => {
+										e.stopPropagation();
+										if (t.taskNodeId) toggleCollapsed(t.taskNodeId);
+									}}
+								/>
+								: <span className={"sg-names__toggle-spacer"} aria-hidden={true}/>}
+							<span className={"sg-names__label"}>{t.name}</span>
+						</div>;
+					})}
 				</div>
 				<div
 					className={"sg-names-pane__resize"}
@@ -171,7 +221,7 @@ const GanttChart = (props: GanttChartProps) => {
 				</div>
 
 				<div className={"sg-rows"} style={{top: AXIS_HEIGHT}}>
-					{tasks.map((t, rowIndex) =>
+					{visibleTasks.map((t, rowIndex) =>
 						<div
 							key={t.id}
 							className={"sg-row"}

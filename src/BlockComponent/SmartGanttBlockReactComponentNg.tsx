@@ -106,6 +106,7 @@ export const SmartGanttBlockReactComponentNg = (props: {
 				height={320}
 				sectionColorA={internalSettings.sectionColorA}
 				sectionColorB={internalSettings.sectionColorB}
+				nestCollapsedByDefault={internalSettings.nestCollapsedByDefault}
 			/>}
 	</main>
 };

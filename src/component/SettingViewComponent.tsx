@@ -174,6 +174,19 @@ const SettingViewComponent = (props: {
 		</div>
 	}
 
+	const nestCollapsedByDefaultCheckbox = () => {
+		return <div className={"flex space-x-2 items-center"}>
+			<Checkbox
+				onCheckedChange={e => {
+					setS({...s, nestCollapsedByDefault: Boolean(e)})
+				}}
+				checked={s.nestCollapsedByDefault}
+				id={"nestcollapsedbydefaultcheckbox"}
+			/>
+			<Label htmlFor={"nestcollapsedbydefaultcheckbox"}>Collapse nested tasks by default</Label>
+		</div>
+	}
+
 
 	const sectionColorSettings = <div className={"flex flex-col gap-3"}>
 		<div className={"text-sm font-medium"}>Heading block colors</div>
@@ -215,6 +228,7 @@ const SettingViewComponent = (props: {
 		</RadioGroup>
 			{filterBaseOnStatusCheckbox}
 			{showTaskListInChartCheckbox()}
+			{nestCollapsedByDefaultCheckbox()}
 			{sectionColorSettings}
 
 		</div>

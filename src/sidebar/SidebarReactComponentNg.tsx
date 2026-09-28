@@ -174,6 +174,7 @@ const SidebarReactComponentNg = (props: {
 						height={"100%"}
 						sectionColorA={settings.sectionColorA}
 						sectionColorB={settings.sectionColorB}
+						nestCollapsedByDefault={settings.nestCollapsedByDefault}
 					/>
 				</ResizablePanel>
 				<ResizableHandle withHandle={true}/>

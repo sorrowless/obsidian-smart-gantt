@@ -232,6 +232,7 @@ export function MainComponent() {
 				onOpenSource={editTask}
 				showNames={true}
 				height={"100%"}
+				nestCollapsedByDefault={view.plugin.settingManager.settings.nestCollapsedByDefault}
 			/>
 		</div>
 	</div>
