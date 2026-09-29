@@ -1,10 +1,10 @@
 {
-	"id": "smart-gantt",
-	"name": "Smart Gantt",
-	"version": "0.2.2",
+	"id": "tasks-gantt",
+	"name": "Tasks Gantt",
+	"version": "1.0.1",
 	"minAppVersion": "1.8.7",
 	"description": "Generate Gantt charts from your tasks.",
-	"author": "Nhan Nguyen",
-	"authorUrl": "https://github.com/nhannht",
+	"author": "Stan Bogatkin, Nhan Nguyen",
+	"authorUrl": "https://github.com/sorrowless",
 	"isDesktopOnly": false
 }
