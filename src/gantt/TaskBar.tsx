@@ -1,7 +1,7 @@
 import {memo, useState} from "react";
 import {GanttChangePayload, GanttTask} from "./types";
 import {dayAnchor, daysBetween, GanttGeometry} from "./useGanttGeometry";
-import {useDragInteraction} from "./useDragInteraction";
+import {DragPreviewState, useDragInteraction} from "./useDragInteraction";
 import GanttTooltip from "./GanttTooltip";
 
 export type BarTone = "done" | "overdue" | "active" | "future"
@@ -18,11 +18,14 @@ const TaskBar = memo((props: {
 	geometry: GanttGeometry
 	onCommit?: (task: GanttTask, change: GanttChangePayload) => void | Promise<void>
 	onOpenSource?: (task: GanttTask) => void | Promise<void>
+	/** Extra translate (days) while an ancestor parent is being moved. */
+	linkedDeltaDays?: number
+	onDragPreview?: (state: DragPreviewState | null) => void
 }) => {
-	const {task, geometry, onCommit, onOpenSource} = props;
+	const {task, geometry, onCommit, onOpenSource, linkedDeltaDays = 0, onDragPreview} = props;
 	const [hover, setHover] = useState(false);
 	const {drag, barHandlers, startHandleProps, endHandleProps} =
-		useDragInteraction(task, geometry, onCommit);
+		useDragInteraction(task, geometry, onCommit, onDragPreview);
 
 	const today = new Date();
 	const tone = barTone(task, today);
@@ -41,6 +44,8 @@ const TaskBar = memo((props: {
 			width -= clamped;
 		}
 		if (drag.mode === "resize-end") width = Math.max(width + dx, px);
+	} else if (linkedDeltaDays) {
+		translate = linkedDeltaDays * px;
 	}
 
 	const duration = daysBetween(task.start, task.end) + 1;
@@ -55,7 +60,7 @@ const TaskBar = memo((props: {
 			"sg-bar",
 			`sg-bar--${tone}`,
 			nested ? "sg-bar--nested" : "",
-			drag ? "sg-bar--dragging sg-frost" : "",
+			drag || linkedDeltaDays ? "sg-bar--dragging sg-frost" : "",
 			onCommit ? "sg-bar--editable" : "",
 		].join(" ")}
 		style={{

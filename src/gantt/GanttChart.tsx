@@ -2,7 +2,7 @@ import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {normalizeSectionColors, sectionBandBackground} from "@/lib/sectionColors";
 import {chartColorCssVars, normalizeChartColors} from "@/lib/chartColors";
 import {GanttChangePayload, GanttTask, GanttZoom} from "./types";
-import {useGanttGeometry} from "./useGanttGeometry";
+import {daysBetween, useGanttGeometry} from "./useGanttGeometry";
 import TimeAxis from "./TimeAxis";
 import TaskBar, {barTone} from "./TaskBar";
 import {sectionAltByRow, sectionBandsFromTasks} from "./sectionBands";
@@ -12,6 +12,8 @@ import {
 	parentsWithChildren,
 	visibleGanttTasks,
 } from "./collapseTasks";
+import {descendantTasks, isDescendantOf, shiftByDays} from "./cascadeMove";
+import type {DragPreviewState} from "./useDragInteraction";
 
 const AXIS_HEIGHT = 52;
 const ROW_HEIGHT = 36;
@@ -80,6 +82,28 @@ const GanttChart = (props: GanttChartProps) => {
 			return next;
 		});
 	}, []);
+
+	const [movePreview, setMovePreview] = useState<DragPreviewState | null>(null);
+
+	const onDragPreview = useCallback((state: DragPreviewState | null) => {
+		if (!state || state.mode !== "move") {
+			setMovePreview(null);
+			return;
+		}
+		setMovePreview(state);
+	}, []);
+
+	const handleTaskChange = useCallback(async (task: GanttTask, change: GanttChangePayload) => {
+		if (!onTaskChange) return;
+		await onTaskChange(task, change);
+		if (change.mode !== "move" || !task.taskNodeId) return;
+		const delta = daysBetween(task.start, change.start);
+		if (delta === 0) return;
+		for (const child of descendantTasks(tasks, task.taskNodeId)) {
+			const shifted = shiftByDays(child, delta);
+			await onTaskChange(child, {...shifted, mode: "move"});
+		}
+	}, [onTaskChange, tasks]);
 
 	const geometry = useGanttGeometry(visibleTasks, zoom);
 	const scrollRef = useRef<HTMLDivElement>(null);
@@ -245,8 +269,18 @@ const GanttChart = (props: GanttChartProps) => {
 							<TaskBar
 								task={t}
 								geometry={geometry}
-								onCommit={onTaskChange}
+								onCommit={handleTaskChange}
 								onOpenSource={onOpenSource}
+								onDragPreview={onDragPreview}
+								linkedDeltaDays={
+									movePreview
+										&& movePreview.mode === "move"
+										&& movePreview.taskNodeId
+										&& t.taskNodeId !== movePreview.taskNodeId
+										&& isDescendantOf(tasks, t, movePreview.taskNodeId)
+										? movePreview.deltaDays
+										: 0
+								}
 							/>
 						</div>
 					)}

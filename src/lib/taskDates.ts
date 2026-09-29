@@ -96,29 +96,36 @@ const TASKS_EMOJI_DATE =
 
 /** Persist a dragged/resized bar using Tasks emoji dates. */
 export function applyTasksEmojiDates(line: string, start: Date, end: Date): string {
-	let next = line.replace(TASKS_EMOJI_DATE, "").replace(/\s{2,}/g, " ").trimEnd();
+	const indent = /^\s*/.exec(line)?.[0] ?? "";
+	let body = line
+		.slice(indent.length)
+		.replace(TASKS_EMOJI_DATE, "")
+		.replace(/\s{2,}/g, " ")
+		.trim();
 	const startIso = formatIsoDate(start);
 	const dueIso = formatIsoDate(end);
 
 	if (sameDay(start, end)) {
-		return `${next} 📅 ${dueIso}`.trim();
+		return `${indent}${body} 📅 ${dueIso}`;
 	}
-	return `${next} 🛫 ${startIso} 📅 ${dueIso}`.trim();
+	return `${indent}${body} 🛫 ${startIso} 📅 ${dueIso}`;
 }
 
 /** Persist a dragged/resized bar using Dataview inline fields. */
 export function applyDataviewDates(line: string, start: Date, end: Date): string {
-	let next = line
+	const indent = /^\s*/.exec(line)?.[0] ?? "";
+	let body = line
+		.slice(indent.length)
 		.replace(/\[(start|due)::[^\]]*]/gi, "")
 		.replace(/\s{2,}/g, " ")
-		.trimEnd();
+		.trim();
 	const startIso = formatIsoDate(start);
 	const dueIso = formatIsoDate(end);
 
 	if (sameDay(start, end)) {
-		return `${next} [due:: ${dueIso}]`.trim();
+		return `${indent}${body} [due:: ${dueIso}]`;
 	}
-	return `${next} [start:: ${startIso}] [due:: ${dueIso}]`.trim();
+	return `${indent}${body} [start:: ${startIso}] [due:: ${dueIso}]`;
 }
 
 /** Concatenate all inline text from the first paragraph of a list item. */

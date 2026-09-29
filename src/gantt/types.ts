@@ -33,4 +33,5 @@ export type GanttZoom = "day" | "week" | "month" | "quarter"
 export interface GanttChangePayload {
 	start: Date
 	end: Date
+	mode: "move" | "resize-start" | "resize-end"
 }

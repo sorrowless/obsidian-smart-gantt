@@ -122,6 +122,26 @@ describe("applyTasksEmojiDates", () => {
 		assert.match(line, /📅 2024-03-05/);
 		assert.doesNotMatch(line, /🛫/);
 	});
+
+	it("preserves leading indentation for nested tasks", () => {
+		const line = applyTasksEmojiDates(
+			"\t- [ ] Child task 🛫 2024-01-01 📅 2024-01-05",
+			d("2024-01-05"),
+			d("2024-01-10"),
+		);
+		assert.ok(line.startsWith("\t- [ ] Child task"));
+		assert.match(line, /🛫 2024-01-05/);
+		assert.match(line, /📅 2024-01-10/);
+	});
+
+	it("preserves multi-space indent", () => {
+		const line = applyTasksEmojiDates(
+			"    - [ ] Nested 📅 2024-01-15",
+			d("2024-02-01"),
+			d("2024-02-01"),
+		);
+		assert.ok(line.startsWith("    - [ ] Nested"));
+	});
 });
 
 describe("applyDataviewDates", () => {
@@ -133,5 +153,14 @@ describe("applyDataviewDates", () => {
 		);
 		assert.match(line, /\[start:: 2024-02-01\]/);
 		assert.match(line, /\[due:: 2024-02-10\]/);
+	});
+
+	it("preserves leading indentation for nested tasks", () => {
+		const line = applyDataviewDates(
+			"\t- [ ] Child [start:: 2024-01-01] [due:: 2024-01-05]",
+			d("2024-01-05"),
+			d("2024-01-10"),
+		);
+		assert.ok(line.startsWith("\t- [ ] Child"));
 	});
 });
