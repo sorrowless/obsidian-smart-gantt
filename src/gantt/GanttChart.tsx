@@ -230,9 +230,6 @@ const GanttChart = (props: GanttChartProps) => {
 							: null}
 						<div className={"sg-grid__line"} style={{left: c.x}}/>
 					</div>)}
-					{geometry.todayX !== null ?
-						<div className={"sg-grid__today"} style={{left: geometry.todayX}}/>
-						: null}
 				</div>
 
 				<div className={"sg-rows"} style={{top: AXIS_HEIGHT}}>
@@ -254,6 +251,17 @@ const GanttChart = (props: GanttChartProps) => {
 						</div>
 					)}
 				</div>
+
+				{geometry.todayX !== null ?
+					<div
+						className={"sg-today-marker"}
+						style={{
+							left: geometry.todayX,
+							top: AXIS_HEIGHT,
+							height: bodyHeight,
+						}}
+					/>
+					: null}
 			</div>
 		</div>
 	</div>;
