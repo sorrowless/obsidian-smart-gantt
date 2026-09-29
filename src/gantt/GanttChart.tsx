@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {normalizeSectionColors, sectionBandBackground} from "@/lib/sectionColors";
+import {chartColorCssVars, normalizeChartColors} from "@/lib/chartColors";
 import {GanttChangePayload, GanttTask, GanttZoom} from "./types";
 import {useGanttGeometry} from "./useGanttGeometry";
 import TimeAxis from "./TimeAxis";
@@ -30,6 +31,12 @@ export interface GanttChartProps {
 	height?: number | string
 	sectionColorA?: string
 	sectionColorB?: string
+	/** Hex override for accent; empty/omit = theme. */
+	colorAccent?: string
+	/** Hex override for done; empty/omit = theme. */
+	colorDone?: string
+	/** Hex override for overdue; empty/omit = theme. */
+	colorOverdue?: string
 	/** When true, parents with subtasks start collapsed. */
 	nestCollapsedByDefault?: boolean
 }
@@ -44,6 +51,9 @@ const GanttChart = (props: GanttChartProps) => {
 		height,
 		sectionColorA,
 		sectionColorB,
+		colorAccent,
+		colorDone,
+		colorOverdue,
 		nestCollapsedByDefault = false,
 	} = props;
 	const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() =>
@@ -77,6 +87,11 @@ const GanttChart = (props: GanttChartProps) => {
 	const [window_, setWindow] = useState<{ fromX: number; toX: number }>({fromX: 0, toX: 1200});
 	const rafPending = useRef(false);
 	const {colorA, colorB} = normalizeSectionColors({sectionColorA, sectionColorB});
+	const chartColors = useMemo(
+		() => normalizeChartColors({colorAccent, colorDone, colorOverdue}),
+		[colorAccent, colorDone, colorOverdue],
+	);
+	const chartColorStyle = useMemo(() => chartColorCssVars(chartColors), [chartColors]);
 	const rowBackground = useCallback((alt: boolean) =>
 		sectionBandBackground(alt ? colorB : colorA, alt ? "alt" : "base"),
 	[colorA, colorB]);
@@ -134,7 +149,7 @@ const GanttChart = (props: GanttChartProps) => {
 
 	return <div
 		className={["sg-chart", resizingNames ? "sg-chart--resizing-names" : ""].join(" ")}
-		style={{height}}
+		style={{height, ...chartColorStyle}}
 	>
 		{showNames ?
 			<div className={"sg-names-pane"} style={{width: namesPaneWidth}}>

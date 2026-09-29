@@ -13,7 +13,7 @@ const Checkbox = React.forwardRef<
     ref={ref}
     className={cn(
       // clickable-icon opts out of Obsidian's button:not(.clickable-icon) skin
-      "clickable-icon peer h-4 w-4 shrink-0 p-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
+      "clickable-icon peer h-4 w-4 shrink-0 p-0 rounded-sm border border-solid border-[var(--text-muted)] ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-[var(--interactive-accent)] data-[state=checked]:bg-[var(--interactive-accent)] data-[state=checked]:text-[var(--text-on-accent)]",
       className
     )}
     {...props}

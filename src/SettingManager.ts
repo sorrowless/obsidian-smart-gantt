@@ -14,6 +14,12 @@ export interface SmartGanttSettings {
 	leftBarChartDisplayQ: boolean,
 	/** When true, parents with subtasks start collapsed in the chart. */
 	nestCollapsedByDefault: boolean,
+	/** Hex override for accent bars/dots; empty = Obsidian theme. */
+	colorAccent: string,
+	/** Hex override for done bars/dots; empty = Obsidian theme. */
+	colorDone: string,
+	/** Hex override for overdue bars/dots; empty = Obsidian theme. */
+	colorOverdue: string,
 	/** Hex color for even heading blocks (#RRGGBB). */
 	sectionColorA: string,
 	/** Hex color for odd heading blocks (#RRGGBB). */
@@ -27,6 +33,9 @@ export const DEFAULT_SMART_GANTT_SETTINGS: SmartGanttSettings = {
 	viewMode: "day",
 	leftBarChartDisplayQ: true,
 	nestCollapsedByDefault: false,
+	colorAccent: "",
+	colorDone: "",
+	colorOverdue: "",
 	sectionColorA: DEFAULT_SECTION_COLOR_A,
 	sectionColorB: DEFAULT_SECTION_COLOR_B,
 };

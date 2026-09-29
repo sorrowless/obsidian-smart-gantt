@@ -233,6 +233,11 @@ export function MainComponent() {
 				showNames={true}
 				height={"100%"}
 				nestCollapsedByDefault={view.plugin.settingManager.settings.nestCollapsedByDefault}
+				sectionColorA={view.plugin.settingManager.settings.sectionColorA}
+				sectionColorB={view.plugin.settingManager.settings.sectionColorB}
+				colorAccent={view.plugin.settingManager.settings.colorAccent}
+				colorDone={view.plugin.settingManager.settings.colorDone}
+				colorOverdue={view.plugin.settingManager.settings.colorOverdue}
 			/>
 		</div>
 	</div>
