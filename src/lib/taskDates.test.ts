@@ -1,11 +1,16 @@
 import assert from "node:assert/strict";
 import {describe, it} from "node:test";
+import remarkGfm from "remark-gfm";
+import remarkParse from "remark-parse";
+import {unified} from "unified";
+import {Parent} from "unist";
 
 import {
 	applyDataviewDates,
 	applyTasksEmojiDates,
 	extractTaskDates,
 	formatIsoDate,
+	listItemText,
 	spanFromTaskDates,
 	stripTaskDateTokens,
 } from "./taskDates";
@@ -96,6 +101,28 @@ describe("spanFromTaskDates", () => {
 		assert.ok(span);
 		assert.equal(formatIsoDate(span.start), "2024-06-01");
 		assert.equal(formatIsoDate(span.end), "2024-06-10");
+	});
+});
+
+describe("listItemText", () => {
+	it("uses markdown link label as visible task text", () => {
+		const tree = unified().use(remarkGfm).use(remarkParse).parse(
+			"- [ ] [task text](https://external.com/some/link) 🛫 2024-01-01 📅 2024-01-02",
+		);
+		const list = (tree as Parent).children.find(c => c.type === "list") as Parent;
+		const item = list.children[0];
+		const text = listItemText(item);
+		assert.match(text, /task text/);
+		assert.doesNotMatch(text, /https:\/\/external\.com/);
+		assert.match(text, /🛫 2024-01-01/);
+	});
+
+	it("keeps plain text tasks unchanged", () => {
+		const tree = unified().use(remarkGfm).use(remarkParse).parse(
+			"- [ ] Plain task 📅 2024-01-15",
+		);
+		const list = (tree as Parent).children.find(c => c.type === "list") as Parent;
+		assert.equal(listItemText(list.children[0]).trim(), "Plain task 📅 2024-01-15");
 	});
 });
 

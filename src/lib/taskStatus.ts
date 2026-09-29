@@ -50,12 +50,19 @@ export function listItemText(node: ListItem): string {
 	try {
 		const paragraph = node.children?.[0] as Parent | undefined;
 		if (!paragraph?.children) return "";
-		return paragraph.children
-			.map((child) => {
-				const textChild = child as { value?: unknown };
-				return typeof textChild.value === "string" ? textChild.value : "";
-			})
-			.join("");
+		const inlineText = (child: Node): string => {
+			const n = child as Parent & {value?: unknown; alt?: string; type?: string};
+			if (typeof n.value === "string") return n.value;
+			if (n.type === "break") return " ";
+			if (n.type === "image" || n.type === "imageReference") {
+				return typeof n.alt === "string" ? n.alt : "";
+			}
+			if ("children" in n && Array.isArray(n.children)) {
+				return n.children.map(inlineText).join("");
+			}
+			return "";
+		};
+		return paragraph.children.map(inlineText).join("");
 	} catch {
 		return "";
 	}
